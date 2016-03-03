@@ -7,7 +7,9 @@ import lsystem.collection.*;
 import lsystem.*;
 //import processing.opengl.*; // optimised for new version (else there is clipping)
 // It'll be even better when I get PShapes3D to work!!!
+import peasy.*;
  
+PeasyCam cam;
 Grammar grammar;
  
 float distance = 20;
@@ -19,44 +21,38 @@ int depth = 10;
 
 float def_ang =radians(90) ; 
 PShape main ;
+PShape testShape ;
 float PHI_BY_2 = radians(90);
 float PHI = radians(180);
 
 String production = "";
+
+int numTriangles = 10000 ;
  
 void setup() {
   //size(800, 600, OPENGL);
-   size(1200, 1000, P3D);
+   size(1200, 850, P3D);
+   background(20, 20, 200);
+   smooth(8);
+   //createSurface();
    
-   println(" H ===> "+height);
-  println(" W ===> "+width); 
+ 
+  //cam.setMinimumDistance(50);
+ // cam.setMaximumDistance(1500);
+ 
+   mainXTrans =  ( width/2) + 128 ;
+  mainYTrans = (height/2) - 272 ; 
+ 
   ambientLight(80, 80, 80);
   directionalLight(100, 100, 100, -1, -1, 1);  
   
-  
-  
-  
-  //configureOpenGL();
   LUT.initialize();
   setupGrammar();
   main = createShape(GROUP);
+  parseAndRender();
   
-  float fov = PI/3.0;
-  float cameraZ = (height/2.0) / tan(fov/2.0);
-  perspective(fov, float(width)/float(height), cameraZ/2.0, cameraZ*2.0);
-  strokeWeight(5);
-  //noStroke();
+ cam = new PeasyCam(this,0,0,0,1000);
 }
- 
-//void configureOpenGL() {
-//hint(ENABLE_OPENGL_4X_SMOOTH);
-//hint(DISABLE_OPENGL_ERROR_REPORT);
-//}
- 
-/**
- * Encapulates the lsystem rules, and calls the grammar to create the production rules
- * depth is number of repeats, and distance is adjusted according to the number of repeats
- */
  
 void setupGrammar() {
   grammar = new SimpleGrammar(this, "A");   // this only required to allow applet to call dispose()
@@ -75,20 +71,21 @@ void setupGrammar() {
  
 void draw() {
  
-  mainXTrans =  (width/2) + 128 ;
-  mainYTrans = (height/2) - 272 ; 
-   background(20, 20, 200);
   lights();
+  background(20, 20, 200);
   
+  shape(main);
+ // println(" Main ==== >"+main.getChildCount());
  
-  
-  //shape(main);
- parseAndRender();
+ 
+ //shape(testShape);
 
 }
- 
+
 void parseAndRender()
 {
+  
+    float sw = 3 ;
     boolean render = false ;
     char[] csArray = production.toCharArray();
     
@@ -116,8 +113,8 @@ void parseAndRender()
            println(" Y ===> "+mainYTrans);
            println(" Z ===> "+mainZTrans);
           translate( mainXTrans,  mainYTrans, mainZTrans);
-           rotateX( 3 * PI/4);
-            rotateY( 3 *  PI/4);
+          // rotateX( 3 * PI/4);
+          //  rotateY( 3 *  PI/4);
            //rotateX(frameCount * 0.5f);
            // rotateY(frameCount * 0.5f); 
           break ;
@@ -131,15 +128,21 @@ void parseAndRender()
        {
          if(!render)
            {
+             pushStyle();
+             
              render = true ;
+             sw = sw + 0.5 ;
+             strokeWeight(sw);
              String subPartStr = getsubPartStr(csArray,csArray[i],i+1);
+             println("each row grammmar ==>"+subPartStr);
              i += subPartStr.length();
-             println(" sub String "+subPartStr);
-              shape(main);
               render(subPartStr);
            }
          else
+         {
             render = false;
+            popStyle();
+         }
        }
          break;
         default:
@@ -161,8 +164,8 @@ int updateMainTranslateCoor(char[] csArray,char axis,int pos)
 {
   int i = 0;
   Map<Character,Integer> charValueMap = new HashMap<Character,Integer>();
-  charValueMap.put('I', 10);
-  charValueMap.put('D', 0);
+  charValueMap.put('I', 2);
+  charValueMap.put('D', 2);
   charValueMap.put('Z', 0);
   /*
   * I -> iiii { i means increament 1 to axis coor}
@@ -207,6 +210,7 @@ void render(String prod)
   lightSpecular(30, 30, 30);
   specular(122, 122, 122);
   shininess(0.7);
+  
   
   //char[] csArray = production.toCharArray();
   
@@ -287,9 +291,9 @@ void render(String prod)
         currShape = createShape(GROUP);
      break; 
     case '}':
+    println(" currShape ==>"+currShape.getChildCount());
     translateX += distance ;
     currShape.translate(translateX,translateY,translateZ);
-    
     main.addChild(currShape);
     drawShape = false ;
      break; 
